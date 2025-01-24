@@ -42,11 +42,6 @@ const handler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString(),
     });
 
-    // Validate request
-    if (!emailRequest.to || !emailRequest.subject || !emailRequest.html) {
-      throw new Error("Missing required email fields");
-    }
-
     // Create initial log entry
     const { data: logEntry, error: logError } = await supabase
       .from('email_logs')
@@ -69,6 +64,12 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to create email log");
     }
 
+    // In test mode, we can only send to burtonpwa@gmail.com
+    const testEmail = "burtonpwa@gmail.com";
+    const recipientEmails = process.env.NODE_ENV === "production" 
+      ? emailRequest.to 
+      : [testEmail];
+
     // Send email using Resend
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -77,8 +78,8 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: emailRequest.from || "PWA Burton <onboarding@resend.dev>",
-        to: emailRequest.to,
+        from: "PWA Burton <onboarding@resend.dev>",
+        to: recipientEmails,
         subject: emailRequest.subject,
         html: emailRequest.html,
         reply_to: emailRequest.replyTo,
@@ -112,7 +113,8 @@ const handler = async (req: Request): Promise<Response> => {
       .from('email_logs')
       .update({
         status: 'sent',
-        resend_id: data.id
+        resend_id: data.id,
+        delivered_at: new Date().toISOString()
       })
       .eq('id', logEntry.id);
 
