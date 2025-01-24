@@ -77,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: emailRequest.from || "PWA Burton <no-reply@pwaburton.org>",
+        from: emailRequest.from || "PWA Burton <onboarding@resend.dev>",
         to: emailRequest.to,
         subject: emailRequest.subject,
         html: emailRequest.html,
@@ -120,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in send-email function:", error);
     return new Response(
       JSON.stringify({
