@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +17,14 @@ export interface EmailRequest {
   html: string;
   from?: string;
   replyTo?: string;
+  memberNumber?: string;
+  emailType?: string;
 }
+
+const supabase = createClient(
+  SUPABASE_URL!,
+  SUPABASE_SERVICE_ROLE_KEY!
+);
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Email function invoked");
@@ -37,6 +47,28 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required email fields");
     }
 
+    // Create initial log entry
+    const { data: logEntry, error: logError } = await supabase
+      .from('email_logs')
+      .insert({
+        member_number: emailRequest.memberNumber,
+        email_type: emailRequest.emailType || 'notification',
+        recipient_email: emailRequest.to[0],
+        subject: emailRequest.subject,
+        status: 'pending',
+        metadata: {
+          additional_recipients: emailRequest.to.slice(1),
+          timestamp: new Date().toISOString()
+        }
+      })
+      .select()
+      .single();
+
+    if (logError) {
+      console.error("Error creating email log:", logError);
+      throw new Error("Failed to create email log");
+    }
+
     // Send email using Resend
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -56,6 +88,16 @@ const handler = async (req: Request): Promise<Response> => {
     if (!res.ok) {
       const error = await res.text();
       console.error("Resend API error:", error);
+
+      // Update log with error
+      await supabase
+        .from('email_logs')
+        .update({
+          status: 'failed',
+          error_message: error
+        })
+        .eq('id', logEntry.id);
+
       throw new Error(`Failed to send email: ${error}`);
     }
 
@@ -64,6 +106,15 @@ const handler = async (req: Request): Promise<Response> => {
       id: data.id,
       timestamp: new Date().toISOString(),
     });
+
+    // Update log with success
+    await supabase
+      .from('email_logs')
+      .update({
+        status: 'sent',
+        resend_id: data.id
+      })
+      .eq('id', logEntry.id);
 
     return new Response(JSON.stringify(data), {
       status: 200,

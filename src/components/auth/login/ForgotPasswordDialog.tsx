@@ -36,6 +36,14 @@ export const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialo
         throw new Error("Please use your registered email address");
       }
 
+      // Generate reset token
+      const { data: token, error: tokenError } = await supabase
+        .rpc('generate_password_reset_token', { 
+          p_member_number: memberNumber 
+        });
+
+      if (tokenError) throw tokenError;
+
       // Update member profile with new contact details
       const { error: updateError } = await supabase
         .from("members")
@@ -47,12 +55,29 @@ export const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialo
 
       if (updateError) throw updateError;
 
-      // Send reset link
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Send reset email
+      const resetLink = `${window.location.origin}/reset-password?token=${token}`;
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: [email],
+          subject: "Password Reset Request",
+          html: `
+            <h2>Password Reset Request</h2>
+            <p>Hello,</p>
+            <p>We received a request to reset your password. Click the link below to set a new password:</p>
+            <p><a href="${resetLink}">Reset Password</a></p>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+            <br>
+            <p>Best regards,</p>
+            <p>PWA Burton Team</p>
+          `,
+          memberNumber,
+          emailType: 'password_reset'
+        }
       });
 
-      if (resetError) throw resetError;
+      if (emailError) throw emailError;
 
       toast({
         title: "Reset link sent",
