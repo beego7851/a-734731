@@ -153,6 +153,62 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          email_type: Database["public"]["Enums"]["email_type"]
+          error_message: string | null
+          id: string
+          member_number: string | null
+          metadata: Json | null
+          recipient_email: string
+          resend_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["email_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          email_type: Database["public"]["Enums"]["email_type"]
+          error_message?: string | null
+          id?: string
+          member_number?: string | null
+          metadata?: Json | null
+          recipient_email: string
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          email_type?: Database["public"]["Enums"]["email_type"]
+          error_message?: string | null
+          id?: string
+          member_number?: string | null
+          metadata?: Json | null
+          recipient_email?: string
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_member_number_fkey"
+            columns: ["member_number"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["member_number"]
+          },
+        ]
+      }
       enhanced_roles: {
         Row: {
           created_at: string | null
@@ -1297,6 +1353,14 @@ export type Database = {
         | "completed"
         | "failed"
         | "created"
+      email_status: "pending" | "sent" | "delivered" | "failed" | "bounced"
+      email_type:
+        | "password_reset"
+        | "welcome"
+        | "verification"
+        | "notification"
+        | "system_announcement"
+        | "payment_confirmation"
       monitoring_event_type:
         | "system_performance"
         | "api_latency"
