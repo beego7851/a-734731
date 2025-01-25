@@ -66,9 +66,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // In test mode, we can only send to burtonpwa@gmail.com
     const testEmail = "burtonpwa@gmail.com";
-    const recipientEmails = process.env.NODE_ENV === "production" 
-      ? emailRequest.to 
-      : [testEmail];
+    const isTestMode = !Deno.env.get("PRODUCTION");
+    const recipientEmails = isTestMode ? [testEmail] : emailRequest.to;
 
     // Send email using Resend
     const res = await fetch("https://api.resend.com/emails", {
@@ -124,16 +123,13 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-email function:", error);
-    return new Response(
-      JSON.stringify({
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 };
 
