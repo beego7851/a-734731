@@ -795,6 +795,79 @@ export type Database = {
           },
         ]
       }
+      payment_receipts: {
+        Row: {
+          amount: number
+          collector_name: string
+          created_at: string | null
+          email_log_id: string | null
+          id: string
+          member_name: string
+          member_number: string
+          payment_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_type: string
+          receipt_number: string
+          sent_at: string | null
+          sent_to: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          collector_name: string
+          created_at?: string | null
+          email_log_id?: string | null
+          id?: string
+          member_name: string
+          member_number: string
+          payment_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_type: string
+          receipt_number: string
+          sent_at?: string | null
+          sent_to: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          collector_name?: string
+          created_at?: string | null
+          email_log_id?: string | null
+          id?: string
+          member_name?: string
+          member_number?: string
+          payment_id?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_type?: string
+          receipt_number?: string
+          sent_at?: string | null
+          sent_to?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipts_email_log_id_fkey"
+            columns: ["email_log_id"]
+            isOneToOne: false
+            referencedRelation: "email_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_receipts_member_number_fkey"
+            columns: ["member_number"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["member_number"]
+          },
+          {
+            foreignKeyName: "payment_receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_requests: {
         Row: {
           amount: number
@@ -1174,6 +1247,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_receipt_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_audit_activity_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1361,6 +1438,7 @@ export type Database = {
         | "notification"
         | "system_announcement"
         | "payment_confirmation"
+        | "payment_receipt"
       monitoring_event_type:
         | "system_performance"
         | "api_latency"
