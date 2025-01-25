@@ -115,7 +115,7 @@ const PaymentDialog = ({
         toast({
           title: "Warning",
           description: "Payment recorded but receipt email failed to send",
-          variant: "warning"
+          variant: "destructive"
         });
       }
 
