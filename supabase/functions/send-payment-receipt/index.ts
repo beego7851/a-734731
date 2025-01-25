@@ -13,14 +13,12 @@ const corsHeaders = {
 
 interface PaymentReceiptRequest {
   paymentId: string;
-  memberEmail: string;
-  memberName: string;
   memberNumber: string;
+  memberName: string;
   amount: number;
   paymentType: string;
   paymentMethod: string;
   collectorName: string;
-  paymentDate: string;
 }
 
 const supabase = createClient(
@@ -36,7 +34,6 @@ const generateReceiptEmail = ({
   paymentType,
   paymentMethod,
   collectorName,
-  paymentDate,
 }: {
   receiptNumber: string;
   memberName: string;
@@ -45,7 +42,6 @@ const generateReceiptEmail = ({
   paymentType: string;
   paymentMethod: string;
   collectorName: string;
-  paymentDate: string;
 }) => {
   const formattedAmount = new Intl.NumberFormat('en-GB', {
     style: 'currency',
@@ -112,7 +108,7 @@ const generateReceiptEmail = ({
         <div class="details">
           <div class="detail-row">
             <strong>Date:</strong>
-            <span>${new Date(paymentDate).toLocaleDateString('en-GB')}</span>
+            <span>${new Date().toLocaleDateString('en-GB')}</span>
           </div>
           <div class="detail-row">
             <strong>Member Name:</strong>
@@ -166,15 +162,19 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Generate receipt number
-    const { data: receiptData, error: receiptError } = await supabase
-      .rpc('generate_receipt_number');
+    const receiptNumber = `REC${Date.now()}`;
 
-    if (receiptError) {
-      console.error("Error generating receipt number:", receiptError);
-      throw new Error("Failed to generate receipt number");
+    // Get member email
+    const { data: memberData, error: memberError } = await supabase
+      .from('members')
+      .select('email')
+      .eq('member_number', paymentRequest.memberNumber)
+      .single();
+
+    if (memberError || !memberData?.email) {
+      console.error("Error getting member email:", memberError);
+      throw new Error("Failed to get member email");
     }
-
-    const receiptNumber = receiptData;
 
     // Create receipt record
     const { data: receipt, error: insertError } = await supabase
@@ -182,7 +182,7 @@ const handler = async (req: Request): Promise<Response> => {
       .insert({
         payment_id: paymentRequest.paymentId,
         receipt_number: receiptNumber,
-        sent_to: paymentRequest.memberEmail,
+        sent_to: memberData.email,
         amount: paymentRequest.amount,
         payment_type: paymentRequest.paymentType,
         payment_method: paymentRequest.paymentMethod,
@@ -206,8 +206,7 @@ const handler = async (req: Request): Promise<Response> => {
       amount: paymentRequest.amount,
       paymentType: paymentRequest.paymentType,
       paymentMethod: paymentRequest.paymentMethod,
-      collectorName: paymentRequest.collectorName,
-      paymentDate: paymentRequest.paymentDate,
+      collectorName: paymentRequest.collectorName
     });
 
     // Send email using Resend
@@ -219,7 +218,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "PWA Burton <onboarding@resend.dev>",
-        to: [paymentRequest.memberEmail],
+        to: [memberData.email],
         subject: `Payment Receipt - ${receiptNumber}`,
         html: emailHtml,
       }),
