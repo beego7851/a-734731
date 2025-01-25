@@ -76,7 +76,8 @@ const PaymentDialog = ({
         collectorId: collectorInfo.id
       });
 
-      const { data, error } = await supabase
+      // Create payment request
+      const { data: paymentData, error: paymentError } = await supabase
         .from('payment_requests')
         .insert({
           member_id: memberId,
@@ -90,13 +91,36 @@ const PaymentDialog = ({
         .select()
         .single();
 
-      if (error) {
-        console.error('Payment submission error:', error);
-        throw error;
+      if (paymentError) {
+        console.error('Payment submission error:', paymentError);
+        throw paymentError;
       }
 
-      console.log('Payment request created:', data);
-      setPaymentRef(data.id);
+      // Send payment receipt email
+      const { data: emailData, error: emailError } = await supabase
+        .functions.invoke('send-payment-receipt', {
+          body: {
+            paymentId: paymentData.id,
+            memberNumber,
+            memberName,
+            amount,
+            paymentType: selectedPaymentType,
+            paymentMethod: selectedPaymentMethod,
+            collectorName: collectorInfo.name
+          }
+        });
+
+      if (emailError) {
+        console.error('Error sending receipt email:', emailError);
+        toast({
+          title: "Warning",
+          description: "Payment recorded but receipt email failed to send",
+          variant: "warning"
+        });
+      }
+
+      console.log('Payment request created:', paymentData);
+      setPaymentRef(paymentData.id);
       setPaymentSuccess(true);
       setShowSplash(true);
 
