@@ -1377,7 +1377,9 @@ export type Database = {
       token_type: "password_reset" | "email_verification"
     }
     CompositeTypes: {
-      [_ in never]: never
+      reset_rate_limit_error: {
+        message: string | null
+      }
     }
   }
 }
