@@ -55,22 +55,51 @@ export const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialo
 
       if (updateError) throw updateError;
 
-      // Send reset email
+      // Send reset email with enhanced template
       const resetLink = `${window.location.origin}/reset-password?token=${token}`;
       const { error: emailError } = await supabase.functions.invoke('send-email', {
         body: {
           to: [email],
-          subject: "Password Reset Request",
+          subject: "Reset Your PWA Burton Password",
           html: `
-            <h2>Password Reset Request</h2>
-            <p>Hello,</p>
-            <p>We received a request to reset your password. Click the link below to set a new password:</p>
-            <p><a href="${resetLink}">Reset Password</a></p>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this, please ignore this email.</p>
-            <br>
-            <p>Best regards,</p>
-            <p>PWA Burton Team</p>
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Reset Your Password</title>
+              </head>
+              <body style="margin: 0; padding: 0; background-color: #1A1F2C; font-family: Arial, sans-serif;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #1A1F2C; color: #FFFFFF;">
+                  <tr>
+                    <td style="padding: 40px 20px; text-align: center; background: linear-gradient(to right, #9b87f5, #7E69AB);">
+                      <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: bold;">PWA Burton</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 40px 20px; background-color: #2A2F3C;">
+                      <h2 style="color: #9b87f5; font-size: 24px; margin-bottom: 20px;">Password Reset Request</h2>
+                      <p style="color: #FFFFFF; font-size: 16px; line-height: 24px; margin-bottom: 20px;">Hello,</p>
+                      <p style="color: #FFFFFF; font-size: 16px; line-height: 24px; margin-bottom: 20px;">We received a request to reset your password. Click the button below to set a new password:</p>
+                      <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #9b87f5; color: #FFFFFF; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background-color 0.3s ease;">Reset Password</a>
+                      </div>
+                      <p style="color: #FFFFFF; font-size: 14px; line-height: 20px; margin-bottom: 20px;">This link will expire in 1 hour for security reasons. If you didn't request this reset, please ignore this email.</p>
+                      <div style="border-top: 1px solid #3A3F4C; margin: 30px 0; padding-top: 20px;">
+                        <p style="color: #9b87f5; font-size: 16px; margin-bottom: 10px;">Need Help?</p>
+                        <p style="color: #FFFFFF; font-size: 14px; line-height: 20px;">If you're having trouble with the button above, copy and paste the following URL into your web browser:</p>
+                        <p style="color: #D6BCFA; font-size: 12px; word-break: break-all;">${resetLink}</p>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 20px; text-align: center; background-color: #1A1F2C;">
+                      <p style="color: #9b87f5; font-size: 14px; margin: 0;">PWA Burton Team</p>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
           `,
           memberNumber,
           emailType: 'password_reset'
