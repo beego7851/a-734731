@@ -209,7 +209,8 @@ const handler = async (req: Request): Promise<Response> => {
       collectorName: paymentRequest.collectorName
     });
 
-    // Send email using Resend
+    // For testing, send to burtonpwa@gmail.com instead of member's email
+    // This is temporary until domain verification is complete
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -218,7 +219,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "PWA Burton <onboarding@resend.dev>",
-        to: [memberData.email],
+        to: ["burtonpwa@gmail.com"], // Temporary: send to verified email
         subject: `Payment Receipt - ${receiptNumber}`,
         html: emailHtml,
       }),
